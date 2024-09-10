@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.View;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,14 +23,13 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class MainServiceImpl implements MainService {
-    private final View error;
     @Value("${file.storage.path}")
     private String DATA_DIR;
 
     @Override
     public HttpStatus saveFile(Data data) throws IOException {
         if (data.getType() == null) {
-            log.error("Empty file!");
+            log.error("Empty type!");
             return HttpStatus.BAD_REQUEST;
         }
         makeFile(getFileName(data.getType()), data);
@@ -47,17 +45,24 @@ public class MainServiceImpl implements MainService {
             Files.createDirectories(directoryPath);
         }
 
-        if (!Files.exists(filePath)) {
+        if (Files.exists(filePath)) {
+            String rawJson = new String(Files.readAllBytes(filePath));
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonFile file = objectMapper.readValue(rawJson, JsonFile.class);
+            file.getData().add(data);
+            file.setCount((long) file.getData().size());
+            saveJson(filePath, file, fileName);
+        } else {
             JsonFile file = makeJsonDataFile(data);
             Files.createFile(filePath);
-            String fileContent = getJsonString(file);
-            Files.write(filePath, fileContent.getBytes());
-            log.info("{} has been saved to {}", fileName, filePath);
+            saveJson(filePath, file, fileName);
         }
-        String rawJson = new String(Files.readAllBytes(filePath));
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonFile file = objectMapper.readValue(rawJson, JsonFile.class);
-        log.error(String.valueOf(file));
+    }
+
+    private void saveJson(Path filePath, JsonFile file, String fileName) throws IOException {
+        String fileContent = getJsonString(file);
+        Files.write(filePath, fileContent.getBytes());
+        log.info("{} has been saved to {}", fileName, filePath);
     }
 
     private JsonFile makeJsonDataFile(Data data) {
@@ -65,7 +70,7 @@ public class MainServiceImpl implements MainService {
     }
 
     private String getFileName(String type) {
-        return String.format("%s-%s.log", type, LocalDate.now());
+        return String.format("%s-%s.log", type.trim(), LocalDate.now());
     }
 
     @SneakyThrows
