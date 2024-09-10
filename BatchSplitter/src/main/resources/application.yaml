@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: BatchSplitter
+file:
+  storage:
+    path: ./data

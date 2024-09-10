@@ -3,3 +3,6 @@ spring:
     name: Xml2Json
 server:
   port: 9091
+file:
+  storage:
+    path: ./data/json

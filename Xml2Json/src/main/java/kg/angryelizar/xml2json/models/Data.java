@@ -1,15 +1,12 @@
 package kg.angryelizar.xml2json.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @Getter
 @Setter
-@Builder
 @ToString
+@NoArgsConstructor
 public class Data {
     @JsonProperty("Method")
     private Method method;
