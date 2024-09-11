@@ -10,11 +10,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -44,18 +43,23 @@ public class MainServiceImpl implements MainService {
 
         List<File> filesByStrDate = getFilesByName(String.format("%s-%s", type, LocalDate.now()), files);
         if (filesByStrDate.isEmpty()) {
+            /// Если файлов за эту дату нету - логика по созданию первого файла и вписывания в него джейсона
             log.error("No files found for type {}", type);
-        } else {
-            log.info("Found {} files", filesByStrDate.size());
+            return;
         }
 
-
+        /// Если нашли файлы за эту дату - достаем самый свежий по индексу
+        log.info("Found {} files", filesByStrDate.size());
+        filesByStrDate.sort(Comparator.comparing(File::getName).reversed());
+        log.info("The newest file {}", filesByStrDate.get(0));
+        filesByStrDate.sort(Comparator.comparing(File::getName));
+        log.info("The oldest file {}", filesByStrDate.get(0));
 
 
     }
 
     private List<File> getFilesByName(String fileName, File[] files) {
-       List<File> result = new ArrayList<>();
+        List<File> result = new ArrayList<>();
         for (File file : files) {
             String strippedFileName = file.getName().substring(0, file.getName().length() - 4);
             log.warn("current file {}, filename for search {}", strippedFileName, fileName);
