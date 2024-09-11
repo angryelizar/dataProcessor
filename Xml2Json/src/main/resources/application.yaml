@@ -1,4 +1,10 @@
 spring:
+  rabbitmq:
+    host: gerbil.rmq.cloudamqp.com
+    port: 5672
+    username: zgmugpkb
+    password: zw9GCmLULPohHbkOsUcfnAOAbn5x_jXX
+    virtual-host: zgmugpkb
   application:
     name: Xml2Json
 server:
@@ -6,3 +12,4 @@ server:
 file:
   storage:
     path: ./data/json
+

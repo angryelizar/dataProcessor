@@ -8,6 +8,7 @@ import kg.angryelizar.xml2json.service.MainService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class MainServiceImpl implements MainService {
+    private final RabbitTemplate rabbitTemplate;
     @Value("${file.storage.path}")
     private String DATA_DIR;
 
@@ -51,18 +53,19 @@ public class MainServiceImpl implements MainService {
             JsonFile file = objectMapper.readValue(rawJson, JsonFile.class);
             file.getData().add(data);
             file.setCount((long) file.getData().size());
-            saveJson(filePath, file, fileName);
+            rabbitTemplate.convertAndSend("myQueue", saveJson(filePath, file, fileName));
         } else {
             JsonFile file = makeJsonDataFile(data);
             Files.createFile(filePath);
-            saveJson(filePath, file, fileName);
+            rabbitTemplate.convertAndSend("myQueue", saveJson(filePath, file, fileName));
         }
     }
 
-    private void saveJson(Path filePath, JsonFile file, String fileName) throws IOException {
+    private String saveJson(Path filePath, JsonFile file, String fileName) throws IOException {
         String fileContent = getJsonString(file);
         Files.write(filePath, fileContent.getBytes());
         log.info("{} has been saved to {}", fileName, filePath);
+        return fileContent;
     }
 
     private JsonFile makeJsonDataFile(Data data) {
