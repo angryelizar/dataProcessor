@@ -12,4 +12,7 @@ server:
 file:
   storage:
     path: ./data/json
+key:
+  rabbit:
+    name: myQueue
 

@@ -1,6 +1,5 @@
 package kg.angryelizar.xml2json.service.impl;
 
-import ch.qos.logback.core.net.ObjectWriter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kg.angryelizar.xml2json.models.Data;
 import kg.angryelizar.xml2json.models.JsonFile;
@@ -27,6 +26,8 @@ public class MainServiceImpl implements MainService {
     private final RabbitTemplate rabbitTemplate;
     @Value("${file.storage.path}")
     private String DATA_DIR;
+    @Value("${key.rabbit.name}")
+    private String KEY_RABBIT_NAME;
 
     @Override
     public HttpStatus saveFile(Data data) throws IOException {
@@ -53,11 +54,13 @@ public class MainServiceImpl implements MainService {
             JsonFile file = objectMapper.readValue(rawJson, JsonFile.class);
             file.getData().add(data);
             file.setCount((long) file.getData().size());
-            rabbitTemplate.convertAndSend("myQueue", saveJson(filePath, file, fileName));
+            saveJson(filePath, file, fileName);
+            rabbitTemplate.convertAndSend(KEY_RABBIT_NAME, getJsonString(file));
         } else {
             JsonFile file = makeJsonDataFile(data);
             Files.createFile(filePath);
-            rabbitTemplate.convertAndSend("myQueue", saveJson(filePath, file, fileName));
+            saveJson(filePath, file, fileName);
+            rabbitTemplate.convertAndSend(KEY_RABBIT_NAME, getJsonString(file));
         }
     }
 
