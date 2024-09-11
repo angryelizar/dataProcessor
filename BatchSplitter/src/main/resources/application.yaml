@@ -11,7 +11,7 @@ server:
   port: 9092
 file:
   storage:
-    path: ./data
+    path: ./data/filteredJson
 key:
   rabbit:
     name: myQueue

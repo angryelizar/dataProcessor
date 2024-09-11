@@ -24,6 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MainServiceImpl implements MainService {
     private final RabbitTemplate rabbitTemplate;
+    private final ObjectMapper objectMapper;
     @Value("${file.storage.path}")
     private String DATA_DIR;
     @Value("${key.rabbit.name}")
@@ -49,26 +50,32 @@ public class MainServiceImpl implements MainService {
         }
 
         if (Files.exists(filePath)) {
-            String rawJson = new String(Files.readAllBytes(filePath));
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonFile file = objectMapper.readValue(rawJson, JsonFile.class);
-            file.getData().add(data);
-            file.setCount((long) file.getData().size());
-            saveJson(filePath, file, fileName);
-            rabbitTemplate.convertAndSend(KEY_RABBIT_NAME, getJsonString(file));
+            makeRecordIfExists(fileName, data, filePath);
         } else {
-            JsonFile file = makeJsonDataFile(data);
-            Files.createFile(filePath);
-            saveJson(filePath, file, fileName);
-            rabbitTemplate.convertAndSend(KEY_RABBIT_NAME, getJsonString(file));
+            makeRecordIfNotExists(fileName, data, filePath);
         }
     }
 
-    private String saveJson(Path filePath, JsonFile file, String fileName) throws IOException {
+    private void makeRecordIfNotExists(String fileName, Data data, Path filePath) throws IOException {
+        JsonFile file = makeJsonDataFile(data);
+        Files.createFile(filePath);
+        saveJson(filePath, file, fileName);
+        rabbitTemplate.convertAndSend(KEY_RABBIT_NAME, makeMessageForBroker(data.getType(), objectMapper.writeValueAsString(data)));
+    }
+
+    private void makeRecordIfExists(String fileName, Data data, Path filePath) throws IOException {
+        String rawJson = new String(Files.readAllBytes(filePath));
+        JsonFile file = objectMapper.readValue(rawJson, JsonFile.class);
+        file.getData().add(data);
+        file.setCount((long) file.getData().size());
+        saveJson(filePath, file, fileName);
+        rabbitTemplate.convertAndSend(KEY_RABBIT_NAME, makeMessageForBroker(data.getType(), objectMapper.writeValueAsString(data)));
+    }
+
+    private void saveJson(Path filePath, JsonFile file, String fileName) throws IOException {
         String fileContent = getJsonString(file);
         Files.write(filePath, fileContent.getBytes());
         log.info("{} has been saved to {}", fileName, filePath);
-        return fileContent;
     }
 
     private JsonFile makeJsonDataFile(Data data) {
@@ -81,7 +88,10 @@ public class MainServiceImpl implements MainService {
 
     @SneakyThrows
     private String getJsonString(JsonFile file) {
-        ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.writeValueAsString(file);
+    }
+
+    private String makeMessageForBroker(String type, String json){
+        return String.format("%s|%s", type, json);
     }
 }
