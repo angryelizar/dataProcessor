@@ -53,7 +53,7 @@ The Xml2Json App performs the following tasks:
     "Type": "Information"
   }
 }
-
+```
 ## BatchSplitter App
 
 ### Description
@@ -93,9 +93,7 @@ The BatchSplitter App is designed to process and manage JSON records received fr
 2. **Run the Application**: Start the BatchSplitter App using Maven:
    ```bash
    mvn spring-boot:run
-3. **Monitor and Verify
-
-Check the output files in the `data/filteredJson` directory to ensure that records are properly split and indexed.
+3. **Monitor and Verify**: Check the output files in the `data/filteredJson` directory to ensure that records are properly split and indexed.
 
 ### Example
 
